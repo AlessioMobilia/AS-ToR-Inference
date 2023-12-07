@@ -66,7 +66,7 @@ BGP communities are codes used by ASes to filter paths. I use these codes to ide
 ### Usage
 You can call the script by passing the starting date, duration (86400 is a full day), and the JSON file/files with the pattern to match.
 
-```python
+```bash
 python3 DatasetDownloader.py -s 08/01/2023 -d 86400 -f pattern.json &> out.txt &
 
 ```
