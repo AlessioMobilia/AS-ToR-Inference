@@ -66,25 +66,28 @@ BGP communities are codes used by ASes to filter paths. I use these codes to ide
 ### Usage
 You can call the script by passing the starting date, duration (86400 is a full day), and the JSON file/files with the pattern to match.
 
-'''
+```python
 python3 DatasetDownloader.py -s 08/01/2023 -d 86400 -f pattern.json &> out.txt &
-'''
+
+```
 
 ### Files Json
 
 The files JSON contain an array of arrays with this structure:
 
-'''
+```json
  [1273, ["1273:1\\d{4}"], 1, -1, []],
-'''
+```
 
 - The first element is the AS number.
 - The second element is an array of regex patterns to be matched.
 - The third element represents the relative position in the AS_path of the AS with which it has a relationship (-1 is left, 1 is right).
 - The fourth element represents the relationship to assign when the pattern matches following this:
-  - AS|<customer-as>|-1
-  - AS|<peer-as>|0
-  - AS|<sibling-as>|1
-  - AS|<provider-as>|2
+  ```
+    AS|<customer-as>|-1
+    AS|<peer-as>|0
+    AS|<sibling-as>|1
+    AS|<provider-as>|2
+  ```
 - The fifth element is an array of regex patterns to exclude. If all patterns match, the relationship is ignored.
 
