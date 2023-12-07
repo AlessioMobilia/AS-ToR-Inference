@@ -12,9 +12,9 @@ from time import sleep
 from neo4j import GraphDatabase
 
 # Define your Neo4j database credentials and connection URL
-uri = "neo4j:// 192.168.10.4"  # Replace with your database URL
-username = "neo4j"  # Replace with your Aura database username
-password = "FrafJWurDR9gX@"  # Replace with your Aura database password
+uri = "neo4j:// 192.168.1.2" 
+username = "" 
+password = "" 
 
 # Define a function to perform some operation within a transaction
 def create_dataset_node(tx, date, name):
@@ -44,28 +44,34 @@ def create_as(tx, asn, datasetid):
 
 
 def create_peer_relationship(tx, asn1, asn2, datasetid):
-    if(relationship_check(tx,asn1,asn2,datasetid)<1):
+    if(relationship_check(tx,asn1,asn2,datasetid,'PEER_OF')<1):
         query = "MATCH (aa:AutonomousSystem {asn:$asn1})-[]-(t:Dataset) WHERE ID(t)=$datasetid MATCH (ab:AutonomousSystem {asn:$asn2})-[]-(t:Dataset) WHERE ID(t)=$datasetid CREATE (aa)-[r:PEER_OF]->(ab)"
         tx.run(query, asn1=asn1, asn2=asn2,datasetid=datasetid)
 
 def create_transit_relationship(tx, asn1, asn2, datasetid):
-    if(relationship_check(tx,asn1,asn2,datasetid)<1):
+    if(relationship_check(tx,asn1,asn2,datasetid,'GIVE_TRANSIT_TO')<1):
         query = "MATCH (a1:AutonomousSystem {asn:$asn1})-[]-(t:Dataset) WHERE ID(t)=$datasetid MATCH (a2:AutonomousSystem {asn:$asn2})-[]-(t:Dataset) WHERE ID(t)=$datasetid CREATE (a1)-[r:GIVE_TRANSIT_TO]->(a2)"
         tx.run(query, asn1=asn1, asn2=asn2, datasetid=datasetid)
 
 def create_sibling_relationship(tx, asn1, asn2, datasetid):
-    if(relationship_check(tx,asn1,asn2,datasetid)<1):
+    if(relationship_check(tx,asn1,asn2,datasetid,'SIBLING_OF')<1):
         query = "MATCH (a1:AutonomousSystem {asn:$asn1})-[]-(t:Dataset) WHERE ID(t)=$datasetid MATCH (a2:AutonomousSystem {asn:$asn2})-[]-(t:Dataset) WHERE ID(t)=$datasetid CREATE (a1)-[r:SIBLING_OF]->(a2)"
         tx.run(query, asn1=asn1, asn2=asn2, datasetid=datasetid)
 
 
-# return the count of a relationship with the same algo
-def relationship_check(tx, asn1, asn2, datasetid):
-    query = ("""
-        MATCH (t:Dataset)-[]-(n:AutonomousSystem {asn: $asn1})-[r]-(a:AutonomousSystem {asn: $asn2})-[]-(t:datasetid) WHERE ID(t)=$datasetid
+# return the count of a relationship with the same datset
+def relationship_check(tx, asn1, asn2, datasetid, relation):
+    if relation =='GIVE_TRANSIT_TO':
+        query = ("""
+        MATCH (t:Dataset)-[]-(n:AutonomousSystem {asn: $asn1})-[r:$relation]->(a:AutonomousSystem {asn: $asn2})-[]-(t:datasetid) WHERE ID(t)=$datasetid
         RETURN COUNT(n) as count
     """)
-    result = tx.run(query, asn1=asn1, asn2=asn2, datasetid=datasetid)
+    else:
+        query = ("""
+            MATCH (t:Dataset)-[]-(n:AutonomousSystem {asn: $asn1})-[r:$relation]-(a:AutonomousSystem {asn: $asn2})-[]-(t:datasetid) WHERE ID(t)=$datasetid
+            RETURN COUNT(n) as count
+        """)
+    result = tx.run(query, asn1=asn1, asn2=asn2, datasetid=datasetid, relation=relation)
     record = result.single(strict=True)
     return record['count']
 
