@@ -12,9 +12,9 @@ from time import sleep
 from neo4j import GraphDatabase
 
 # Define your Neo4j database credentials and connection URL
-uri = "neo4j:// 192.168.1.2" 
-username = "" 
-password = "" 
+uri = "neo4j:// 192.168.10.4" 
+username = "neo4j" 
+password = "FrafJWurDR9gX@" 
 
 # Define a function to perform some operation within a transaction
 def create_dataset_node(tx, date, name):
@@ -63,12 +63,17 @@ def create_sibling_relationship(tx, asn1, asn2, datasetid):
 def relationship_check(tx, asn1, asn2, datasetid, relation):
     if relation =='GIVE_TRANSIT_TO':
         query = ("""
-        MATCH (t:Dataset)-[]-(n:AutonomousSystem {asn: $asn1})-[r:$relation]->(a:AutonomousSystem {asn: $asn2})-[]-(t:datasetid) WHERE ID(t)=$datasetid
+        MATCH (t:Dataset)-[]-(n:AutonomousSystem {asn: $asn1})-[r:GIVE_TRANSIT_TO]->(a:AutonomousSystem {asn: $asn2})-[]-(t:datasetid) WHERE ID(t)=$datasetid
         RETURN COUNT(n) as count
     """)
-    else:
+    elif relation == 'PEER_OF':
         query = ("""
-            MATCH (t:Dataset)-[]-(n:AutonomousSystem {asn: $asn1})-[r:$relation]-(a:AutonomousSystem {asn: $asn2})-[]-(t:datasetid) WHERE ID(t)=$datasetid
+            MATCH (t:Dataset)-[]-(n:AutonomousSystem {asn: $asn1})-[r:PEER_OF]-(a:AutonomousSystem {asn: $asn2})-[]-(t:datasetid) WHERE ID(t)=$datasetid
+            RETURN COUNT(n) as count
+        """)
+    elif relation == 'SIBLING_OF':
+        query = ("""
+            MATCH (t:Dataset)-[]-(n:AutonomousSystem {asn: $asn1})-[r:SIBLING_OF]-(a:AutonomousSystem {asn: $asn2})-[]-(t:datasetid) WHERE ID(t)=$datasetid
             RETURN COUNT(n) as count
         """)
     result = tx.run(query, asn1=asn1, asn2=asn2, datasetid=datasetid, relation=relation)
@@ -114,7 +119,8 @@ def main(filepath,datasetname,time):
             # Start a transaction
             with session.begin_transaction() as tx:
 
-                datasetid = create_dataset_node(tx, time, datasetname)
+                date = int(datetime.strptime(time, '%m/%d/%Y').strftime('%s'))
+                datasetid = create_dataset_node(tx, date, datasetname)
             
             gen_graph(filepath,session,datasetid)
                 
@@ -194,15 +200,6 @@ def get_as_name(asnumber, retry=0):
         return "Unknown"  # Handle the error by returning a default value
 
 
-def valid_date(s):
-    try:
-        return datetime.strptime(s, "%Y-%m-%d")
-    except ValueError:
-        msg = "not a valid date: {0!r}".format(s)
-        raise argparse.ArgumentTypeError(msg)
-
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Upload the data inferred to neo4j graph db')
     parser.add_argument('-n', '--name',
@@ -212,8 +209,7 @@ if __name__ == "__main__":
                         help='file path of the infered results',
                         required=True)
     parser.add_argument('-d', '--date',
-                        type=valid_date,
-                        help='date of the input data for the inference algo',
+                        help='date of the input data for the inference algo in MM/DD/YYYY',
                         required=True)
     args = parser.parse_args()
 
