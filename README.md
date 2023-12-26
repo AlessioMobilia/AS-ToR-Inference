@@ -49,7 +49,7 @@ If you have any questions or feedback, please don't hesitate to reach out.
 
 # Dataset
 
-There are two main datasets.
+There are two main datasets. You can find the dump of the neo4j db in the dataset folder. It contains all inference results and all the datasets.
 
 ## Hurricane
 
